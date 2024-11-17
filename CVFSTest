@@ -1,0 +1,145 @@
+package hk.edu.polyu.comp.comp2021.cvfs.model;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import static org.junit.jupiter.api.Assertions.*;
+
+
+public class CVFSTest {
+/*
+* @Test
+    public void testCVFSConstructor(){
+        CVFS cvfs = new CVFS();
+
+        assert true;
+    }
+* */
+
+
+    private CVFS cvfs;
+    private Disk disk;
+    private Directory rootDir;
+
+    @BeforeEach
+    public void setUp() {
+        cvfs = new CVFS();
+        disk = new Disk(100, 0); // Assuming Disk has a constructor with size and ID
+        rootDir = disk.getRootDir();
+        cvfs.newDisk(100);
+        cvfs.curDisk = disk;
+        cvfs.curDir = rootDir;
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testNewDisk() {
+        cvfs.newDisk(200);
+        assertNotNull(cvfs.getCurDisk());
+        assertEquals(200, cvfs.getCurDisk().getMaxDiskSize());
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testChangeDirValid() {
+        Directory subDir = new Directory("subDir");
+        rootDir.addFile(subDir); // Assuming Directory has a method to add files
+        cvfs.changeDir("subDir");
+        assertEquals(subDir, cvfs.getCurDir());
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testChangeDirInvalid() {
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        cvfs.changeDir("nonExistentDir");
+
+        assertTrue(outContent.toString().contains("Error: Directory not found. Failed to change directory."));
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testSearchCriteriaExists() {
+        Criterion criterion = new SimpleCriterion("testCriterion", "size", ">", "50");
+        cvfs.CriterionMap.put("testCriterion", criterion);
+
+        myFile testFile = new myFile("file.txt", "txt", 100, "Content of the file.") {
+            @Override
+            void setName(String newName) {
+
+            }
+
+            @Override
+            String getFullName() {
+                return "";
+            }
+
+            @Override
+            boolean isDocument() {
+                return false;
+            }
+
+            @Override
+            int getFileSize() {
+                return 0;
+            }
+
+            @Override
+            String getType() {
+                return "";
+            }
+
+            @Override
+            String getContent() {
+                return "";
+            }
+        };
+        //rootDir.addFile( testFile); // Assuming Directory has a method to add files
+
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        cvfs.search("testCriterion");
+
+        assertTrue(outContent.toString().contains("file.txt"));
+        assertTrue(outContent.toString().contains("Total files: 1"));
+        assertTrue(outContent.toString().contains("Total size: 100 bytes"));
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testSave() throws Exception {
+        String testPath = "testSave.txt";
+        cvfs.save(testPath);
+
+        String savedContent = new String(Files.readAllBytes(Paths.get(testPath)));
+        assertTrue(savedContent.contains("newDisk 100"));
+        assertTrue(savedContent.contains("quit"));
+
+        // Clean up
+        Files.delete(Paths.get(testPath));
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testAddSimpleCriteria() {
+        cvfs.addSimpleCriteria("sizeCriteria", "size", ">", "50");
+
+        assertTrue(cvfs.CriterionMap.containsKey("sizeCriteria"));
+        //assertEquals("size", ((SimpleCriterion) cvfs.CriterionMap.get("sizeCriteria")).getAttributeName());
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testPrintAllCriteria() {
+        cvfs.addSimpleCriteria("sizeCriteria", "size", ">", "50");
+
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        cvfs.printAllCriteria();
+
+        assertTrue(outContent.toString().contains("All Criterion:"));
+        assertTrue(outContent.toString().contains("sizeCriteria"));
+    }
+}
